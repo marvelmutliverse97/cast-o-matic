@@ -17,10 +17,17 @@ pipeline {
         }
 stage('Install Dependencies') {
     steps {
-        echo 'Setting up Python virtual environment and installing packages...'
-        bat '"C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m venv venv || "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python311\\python.exe" -m venv venv'
-        echo 'Installing requirements with trusted host flags...'
+        echo 'Setting up Python virtual environment using Python 3.11...'
+        bat 'py -3.11 -m venv venv || "C:\\Program Files\\Python311\\python.exe" -m venv venv'
+        echo 'Installing requirements...'
         bat '.\\venv\\Scripts\\pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt'
+    }
+}
+
+stage('Build Docker Image') {
+    steps {
+        echo 'Building Cast-O-Matic Docker container image...'
+        bat 'docker build -t cast-o-matic:latest .'
     }
 }
 
