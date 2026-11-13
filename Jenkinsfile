@@ -18,9 +18,9 @@ pipeline {
 stage('Install Dependencies') {
     steps {
         echo 'Setting up Python virtual environment and installing packages...'
-        bat '"C:\\Program Files\\Python311\\python.exe" -m venv venv || "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python311\\python.exe" -m venv venv'
-        bat '.\\venv\\Scripts\\pip install --upgrade pip'
-        bat '.\\venv\\Scripts\\pip install -r requirements.txt'
+        bat '"C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m venv venv || "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python311\\python.exe" -m venv venv'
+        echo 'Installing requirements with trusted host flags...'
+        bat '.\\venv\\Scripts\\pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt'
     }
 }
 
