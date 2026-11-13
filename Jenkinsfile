@@ -15,15 +15,14 @@ pipeline {
                 bat 'dir'
             }
         }
-
-        stage('Install Dependencies') {
-            steps {
-                echo 'Setting up Python virtual environment and installing packages...'
-                bat 'C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe -m venv venv'
-                bat '.\\venv\\Scripts\\pip install --upgrade pip'
-                bat '.\\venv\\Scripts\\pip install -r requirements.txt'
-            }
-        }
+stage('Install Dependencies') {
+    steps {
+        echo 'Setting up Python virtual environment and installing packages...'
+        bat '"C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m venv venv'
+        bat '.\\venv\\Scripts\\pip install --upgrade pip'
+        bat '.\\venv\\Scripts\\pip install -r requirements.txt'
+    }
+}
 
         stage('Build Docker Image') {
             steps {
