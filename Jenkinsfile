@@ -27,7 +27,7 @@ stage('Install Dependencies') {
         stage('Build Docker Image') {
     steps {
         echo 'Building Cast-O-Matic Docker container image...'
-        bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" build -t cast-o-matic:latest .'
+        bat '"C:\\Program Files\\Docker\\Docker\\docker.exe" build -t cast-o-matic:latest .'
     }
 }
 
