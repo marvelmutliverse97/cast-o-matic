@@ -17,6 +17,8 @@ pipeline {
         }
 stage('Install Dependencies') {
     steps {
+        echo 'Diagnosing Python logging module source...'
+        bat '"C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -c "import logging; print(logging.__file__)"'
         echo 'Setting up Python virtual environment and installing packages...'
         bat '"C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m venv venv'
         bat '.\\venv\\Scripts\\pip install --upgrade pip'
