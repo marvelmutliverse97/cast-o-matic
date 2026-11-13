@@ -8,14 +8,13 @@ pipeline {
                 checkout scm
             }
         }
-
-        stage('Install Dependencies') {
-            steps {
-                echo 'Setting up Python virtual environment & installing dependencies...'
-                bat 'python -m venv venv'
-                bat './venv/Scripts/pip install -r requirements.txt'
-            }
-        }
+stage('Install Dependencies') {
+    steps {
+        echo 'Setting up Python virtual environment & installing dependencies...'
+        bat 'C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe -m venv venv'
+        bat '.\\venv\\Scripts\\pip install -r requirements.txt'
+    }
+}
 
         stage('Build Docker Image') {
             steps {
