@@ -1,0 +1,410 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Cast-O-Matic - Sender Dashboard</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+
+    <style>
+        body {
+            background: #1a1e29;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px 15px;
+        }
+
+        .card {
+            background: #222738;
+            width: 500px;
+            max-width: 95%;
+            margin: 0 auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        input[type="file"] {
+            margin: 20px 0;
+            color: white;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .btn-stream {
+            background: #10b981;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Cast-O-Matic Presentation & Screen Sender</h2>
+
+    <div class="card">
+
+        <h3>Upload PDF Presentation</h3>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+
+            <input
+                type="file"
+                id="file"
+                name="file"
+                accept=".pdf,application/pdf"
+                required>
+
+            <br>
+
+            <button type="submit" class="btn">
+                Upload & Cast PDF
+            </button>
+
+        </form>
+
+        <div id="status"></div>
+
+        <hr style="border-color:#374151; margin:20px 0;">
+
+        <h3>Live Screen Sharing</h3>
+
+        <button id="startShare" class="btn btn-stream">
+            Start Live Screen Share
+        </button>
+
+        <button
+            id="stopShare"
+            class="btn"
+            style="background:#ef4444; display:none;">
+            Stop Share
+        </button>
+
+        <div id="streamStatus" style="margin-top:10px;">
+            Not sharing
+        </div>
+
+        <br><br>
+
+        <button
+            class="btn"
+            style="background:#4b5563;"
+            onclick="window.open('/receiver', '_blank')">
+
+            Open Virtual Projector Receiver
+
+        </button>
+
+    </div>
+
+
+    <script>
+
+        const socket = io();
+
+        const ROOM = "classroom";
+
+        let pc = null;
+        let localStream = null;
+
+        let pendingCandidates = [];
+
+        const rtcConfig = {
+            iceServers: [
+                {
+                    urls: "stun:stun.l.google.com:19302"
+                }
+            ]
+        };
+
+
+        const startButton =
+            document.getElementById("startShare");
+
+        const stopButton =
+            document.getElementById("stopShare");
+
+        const streamStatus =
+            document.getElementById("streamStatus");
+
+
+        socket.on("connect", () => {
+
+            console.log("Sender connected");
+
+            socket.emit("join", {
+                room: ROOM
+            });
+
+        });
+// Receive answer from receiver.
+socket.on("answer", async answer => {
+    console.log("WebRTC answer received");
+
+    if (!pc) {
+        return;
+    }
+
+    try {
+        await pc.setRemoteDescription(
+            new RTCSessionDescription(answer)
+        );
+
+        const candidates = pendingCandidates;
+        pendingCandidates = [];
+
+        for (const candidate of candidates) {
+            try {
+                await pc.addIceCandidate(
+                    new RTCIceCandidate(candidate)
+                );
+            } catch (error) {
+                console.error(
+                    "Queued ICE candidate error:",
+                    error
+                );
+            }
+        }
+
+        console.log("Remote description installed");
+
+    } catch (error) {
+        console.error(
+            "Error setting remote description:",
+            error
+        );
+    }
+});
+        // Receive ICE candidate from receiver.
+        // Receive ICE candidate from receiver.
+socket.on("ice-candidate", async data => {
+    const candidate = data && data.candidate ? data.candidate : data;
+
+    if (!candidate) return;
+
+    if (!candidate.candidate && candidate.sdpMid === null && candidate.sdpMLineIndex === null) {
+        return;
+    }
+
+    if (!pc || !pc.remoteDescription) {
+        pendingCandidates.push(candidate);
+        return;
+    }
+
+    try {
+        await pc.addIceCandidate(
+            new RTCIceCandidate(candidate)
+        );
+    } catch (error) {
+        console.error("Sender ICE candidate error:", error);
+    }
+});
+
+        // PDF upload.
+        document.getElementById("uploadForm").onsubmit =
+            async function(event) {
+
+                event.preventDefault();
+
+                const status =
+                    document.getElementById("status");
+
+                const file =
+                    document.getElementById("file").files[0];
+
+                if (!file) {
+                    status.textContent = "Please select a PDF.";
+                    return;
+                }
+
+                const formData = new FormData(this);
+
+                status.textContent = "Uploading PDF...";
+
+                try {
+
+                    const response = await fetch("/upload", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+                        throw new Error(
+                            data.error || "Upload failed"
+                        );
+                    }
+
+                    status.textContent =
+                        "Successfully uploaded: " + data.filename;
+
+                } catch (error) {
+
+                    status.textContent =
+                        "Upload error: " + error.message;
+
+                }
+
+            };
+
+
+        // Start live screen sharing.
+        startButton.onclick = async function() {
+
+            if (!socket.connected) {
+                alert("Server connection is not ready.");
+                return;
+            }
+
+            if (pc) {
+                return;
+            }
+
+            try {
+
+                localStream =
+                    await navigator.mediaDevices.getDisplayMedia({
+                        video: true,
+                        audio: true
+                    });
+
+                pendingCandidates = [];
+
+                pc = new RTCPeerConnection(rtcConfig);
+
+
+                localStream.getTracks().forEach(track => {
+
+                    pc.addTrack(track, localStream);
+
+                });
+
+
+                pc.onicecandidate = event => {
+
+                    if (event.candidate) {
+
+                        socket.emit("ice-candidate", {
+                            room: ROOM,
+                            candidate: event.candidate.toJSON()
+                        });
+
+                    }
+
+                };
+
+
+                pc.onconnectionstatechange = () => {
+
+                    console.log(
+                        "Sender connection:",
+                        pc ? pc.connectionState : "closed"
+                    );
+
+                    if (
+                        pc &&
+                        ["failed", "closed"].includes(pc.connectionState)
+                    ) {
+                        streamStatus.textContent =
+                            "Connection ended";
+                    }
+
+                };
+
+
+                const offer = await pc.createOffer();
+
+                await pc.setLocalDescription(offer);
+
+
+                socket.emit("offer", {
+                    room: ROOM,
+                    offer: pc.localDescription
+                });
+
+
+                startButton.style.display = "none";
+                stopButton.style.display = "inline-block";
+
+                streamStatus.textContent =
+                    "Live screen sharing started";
+
+
+                localStream.getVideoTracks()[0].onended =
+                    stopStreaming;
+
+
+            } catch (error) {
+
+                console.error("Screen sharing error:", error);
+
+                streamStatus.textContent =
+                    "Screen sharing failed: " + error.message;
+
+                stopStreaming();
+
+            }
+
+        };
+
+
+        // Stop screen sharing.
+        function stopStreaming() {
+
+            if (localStream) {
+
+                localStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+
+                localStream = null;
+
+            }
+
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+
+            pendingCandidates = [];
+
+            startButton.style.display = "inline-block";
+            stopButton.style.display = "none";
+
+            streamStatus.textContent = "Not sharing";
+
+        }
+
+
+        stopButton.onclick = stopStreaming;
+
+
+        socket.on("disconnect", () => {
+
+            console.log("Sender disconnected");
+
+            stopStreaming();
+
+        });
+
+    </script>
+
+</body>
+</html>

@@ -1,41 +1,157 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Cast-O-Matic | Smart Projector Remote</title>
+
     <style>
-        body { font-family: Arial, sans-serif; background: #0f172a; color: #f8fafc; text-align: center; padding: 40px; }
-        .card { background: #1e293b; padding: 30px; border-radius: 12px; display: inline-block; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-width: 400px; width: 100%; }
-        button { background: #3b82f6; color: white; border: none; padding: 12px 20px; margin: 8px; border-radius: 6px; cursor: pointer; font-size: 16px; width: 45%; }
-        button:hover { background: #2563eb; }
-        .off { background: #ef4444; } .off:hover { background: #dc2626; }
-        .status { background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #334155; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .card {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            display: inline-block;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 45%;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        .off {
+            background: #ef4444;
+        }
+
+        .off:hover {
+            background: #dc2626;
+        }
+
+        .status {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
     </style>
 </head>
+
 <body>
+
     <div class="card">
+
         <h2>Cast-O-Matic</h2>
-        <p>Brand: <strong>{{ brand }}</strong> | IP: <strong>{{ ip }}</strong></p>
+
+        <p>
+            Brand: <strong>{{ brand }}</strong> |
+            IP: <strong>{{ ip }}</strong>
+        </p>
+
         <div class="status">
             <p>Target Projector Status Ready</p>
         </div>
+
         <div>
-            <button onclick="sendControl('power', 'ON')">Power ON</button>
-            <button class="off" onclick="sendControl('power', 'OFF')">Power OFF</button>
-            <button onclick="sendControl('input', 'HDMI 1')">HDMI 1</button>
-            <button onclick="sendControl('input', 'Wireless Cast')">Wireless Cast</button>
+
+            <button onclick="sendControl('power', 'ON')">
+                Power ON
+            </button>
+
+            <button class="off" onclick="sendControl('power', 'OFF')">
+                Power OFF
+            </button>
+
+            <button onclick="sendControl('input', 'HDMI 1')">
+                HDMI 1
+            </button>
+
+            <button onclick="sendControl('input', 'Wireless Cast')">
+                Wireless Cast
+            </button>
+
         </div>
+
+        <p id="result"></p>
+
+        <p>
+            <a href="/sender" style="color:#60a5fa;">
+                Open Presentation Sender
+            </a>
+        </p>
+
     </div>
+
+
     <script>
-        function sendControl(action, value) {
-            fetch('/control', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: action, value: value })
-            }).then(res => res.json()).then(data => {
-                alert("Command sent! Success: " + data.success);
-            });
+
+        async function sendControl(action, value) {
+
+            const result = document.getElementById("result");
+
+            result.textContent = "Sending command...";
+
+            try {
+
+                const response = await fetch("/control", {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        action: action,
+                        value: value
+                    })
+
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(
+                        data.response || data.error || "Command failed"
+                    );
+                }
+
+                result.textContent =
+                    "Command successful: " + value;
+
+            } catch (error) {
+
+                result.textContent =
+                    "Command failed: " + error.message;
+
+            }
+
         }
+
     </script>
+
 </body>
 </html>

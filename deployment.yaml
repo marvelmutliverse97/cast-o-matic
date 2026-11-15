@@ -1,0 +1,40 @@
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: cast-o-matic-deployment
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: cast-o-matic
+
+  template:
+    metadata:
+      labels:
+        app: cast-o-matic
+
+    spec:
+      containers:
+        - name: cast-o-matic
+          image: cast-o-matic:latest
+          imagePullPolicy: Never
+
+          ports:
+            - containerPort: 5080
+              protocol: TCP
+
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+
+          volumeMounts:
+            - name: uploads-storage
+              mountPath: /app/uploads
+
+      volumes:
+        - name: uploads-storage
+          emptyDir: {}

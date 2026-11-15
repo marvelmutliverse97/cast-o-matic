@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Projector Receiver</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+
+    <style>
+        body {
+            background: #111;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #screen {
+            width: 85%;
+            height: 650px;
+            background: #222;
+            border: 3px solid #444;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        iframe, video {
+            width: 100%;
+            height: 100%;
+            border: none;
+            object-fit: contain;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Virtual Classroom Projector Display</h1>
+
+    <div id="screen">
+
+        <h2 id="placeholder">
+            Waiting for presentation upload or live screen share...
+        </h2>
+
+        <iframe id="pdfViewer" style="display:none;"></iframe>
+
+        <video
+    id="remoteVideo"
+    autoplay
+    playsinline
+    muted
+    style="display:none;">
+</video>
+
+    </div>
+
+    <script>
+        const socket = io();
+
+        const ROOM = "classroom";
+
+        let pc = null;
+        let pendingCandidates = [];
+
+        const rtcConfig = {
+            iceServers: [
+                {
+                    urls: "stun:stun.l.google.com:19302"
+                }
+            ]
+        };
+
+        const placeholder =
+            document.getElementById("placeholder");
+
+        const pdfViewer =
+            document.getElementById("pdfViewer");
+
+        const remoteVideo =
+            document.getElementById("remoteVideo");
+
+
+        socket.on("connect", () => {
+            console.log("Receiver connected");
+
+            socket.emit("join", {
+                room: ROOM
+            });
+        });
+
+
+        function showPDF(filename) {
+            placeholder.style.display = "none";
+            remoteVideo.style.display = "none";
+            pdfViewer.style.display = "block";
+
+            pdfViewer.src =
+                "/uploads/" + encodeURIComponent(filename);
+        }
+
+
+        function showVideo() {
+            placeholder.style.display = "none";
+            pdfViewer.style.display = "none";
+            remoteVideo.style.display = "block";
+        }
+
+
+        // Display an already uploaded presentation.
+        const initialPresentation =
+            {{ presentation | tojson }};
+
+        if (initialPresentation) {
+            showPDF(initialPresentation);
+        }
+
+
+        socket.on("presentation_update", data => {
+            if (data && data.filename) {
+                console.log("PDF received:", data.filename);
+                showPDF(data.filename);
+            }
+        });
+
+
+        async function addPendingCandidates() {
+            const candidates = pendingCandidates;
+            pendingCandidates = [];
+
+            for (const candidate of candidates) {
+                try {
+                    await pc.addIceCandidate(
+                        new RTCIceCandidate(candidate)
+                    );
+                } catch (error) {
+                    console.error(
+                        "Could not add queued ICE candidate:",
+                        error
+                    );
+                }
+            }
+        }
+
+document.body.addEventListener('click', () => {
+    if (remoteVideo.paused && remoteVideo.srcObject) {
+        remoteVideo.play().catch(e => console.log("Play error:", e));
+    }
+});
+        socket.on("offer", async offer => {
+
+            console.log("WebRTC offer received");
+
+            try {
+                if (pc) {
+                    pc.close();
+                }
+
+                pendingCandidates = [];
+
+                pc = new RTCPeerConnection(rtcConfig);
+           pc.ontrack = event => {
+    console.log("Remote video received");
+
+    if (event.streams && event.streams[0]) {
+        remoteVideo.srcObject = event.streams[0];
+    } else {
+        let stream = new MediaStream();
+        stream.addTrack(event.track);
+        remoteVideo.srcObject = stream;
+    }
+
+    showVideo();
+
+    remoteVideo.muted = true; // Crucial for Chrome autoplay compliance
+    remoteVideo.play().catch(error => {
+        console.warn("Video playback warning:", error);
+    });
+}
+             pc.onicecandidate = event => {
+                    if (event.candidate) {
+                        socket.emit("ice-candidate", {
+                            room: ROOM,
+                            candidate: event.candidate.toJSON()
+                        });
+                    }
+                };
+
+
+                pc.onconnectionstatechange = () => {
+                    console.log(
+                        "Receiver connection:",
+                        pc.connectionState
+                    );
+                };
+
+
+                await pc.setRemoteDescription(
+                    new RTCSessionDescription(offer)
+                );
+
+                await addPendingCandidates();
+
+                const answer = await pc.createAnswer();
+
+                await pc.setLocalDescription(answer);
+
+                socket.emit("answer", {
+                    room: ROOM,
+                    answer: pc.localDescription
+                });
+
+                console.log("WebRTC answer sent");
+
+            } catch (error) {
+                console.error(
+                    "Receiver WebRTC error:",
+                    error
+                );
+
+                placeholder.textContent =
+                    "Connection failed. Please restart screen sharing.";
+
+                placeholder.style.display = "block";
+            }
+        });
+
+socket.on("ice-candidate", async data => {
+    const candidate = data && data.candidate ? data.candidate : data;
+
+    if (!candidate) return;
+
+    if (!candidate.candidate && candidate.sdpMid === null && candidate.sdpMLineIndex === null) {
+        return;
+    }
+
+    if (!pc || !pc.remoteDescription) {
+        pendingCandidates.push(candidate);
+        return;
+    }
+
+    try {
+        await pc.addIceCandidate(
+            new RTCIceCandidate(candidate)
+        );
+    } catch (error) {
+        console.error("Error adding receiver ICE candidate:", error);
+    }
+});
+
+
+        socket.on("disconnect", () => {
+            console.log("Receiver disconnected from server");
+        });
+
+    </script>
+
+</body>
+</html>
