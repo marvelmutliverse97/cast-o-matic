@@ -1,6 +1,5 @@
 
 pipeline {
-
     agent any
 
     stages {
@@ -11,17 +10,27 @@ pipeline {
             }
         }
 
+        stage('Check Python') {
+            steps {
+                bat '''
+                    echo Checking Python...
+                    "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" --version
+                '''
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 bat '''
-                    :: Use absolute path to Python interpreter on Windows
-                    "C:\\Program Files\\Python311\\python.exe" -m venv .venv
+                    "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m venv .venv
 
                     .venv\\Scripts\\python.exe -m pip install --upgrade pip
+
                     .venv\\Scripts\\python.exe -m pip install -r requirements.txt
                 '''
             }
         }
+
         stage('Run Tests') {
             steps {
                 bat '''
@@ -33,22 +42,20 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 bat '''
+                    docker --version
                     docker build -t cast-o-matic:latest .
                 '''
             }
         }
-
     }
 
     post {
-
         success {
             echo 'Cast-O-Matic pipeline executed successfully!'
         }
 
         failure {
-            echo 'Pipeline failed. Check the console output for the failing stage.'
+            echo 'Pipeline failed. Check the console output.'
         }
-
     }
 }
