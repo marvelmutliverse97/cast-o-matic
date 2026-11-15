@@ -44,15 +44,18 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                bat '''
-                    docker --version
-                    docker build -t cast-o-matic:latest .
-                '''
-            }
-        }
+stage('Build Docker Image') {
+    steps {
+        bat '''
+            "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" --version
+
+            "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" info
+
+            "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" build -t cast-o-matic:latest .
+        '''
     }
+}
+
 
     post {
         success {
