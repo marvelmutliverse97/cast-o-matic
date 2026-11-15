@@ -22,15 +22,12 @@ pipeline {
             steps {
                 bat '''
                     "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m venv .venv
-
                     if errorlevel 1 exit /b 1
 
                     .venv\\Scripts\\python.exe -m pip install --upgrade pip
-
                     if errorlevel 1 exit /b 1
 
                     .venv\\Scripts\\python.exe -m pip install -r requirements.txt
-
                     if errorlevel 1 exit /b 1
                 '''
             }
@@ -44,18 +41,16 @@ pipeline {
             }
         }
 
-stage('Build Docker Image') {
-    steps {
-        bat '''
-            "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" --version
+        stage('Build Docker Image') {
+            steps {
+                bat '''
+                    "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" --version
 
-            "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" info
-
-            "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" build -t cast-o-matic:latest .
-        '''
+                    "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" build -t cast-o-matic:latest .
+                '''
+            }
+        }
     }
-}
-
 
     post {
         success {
