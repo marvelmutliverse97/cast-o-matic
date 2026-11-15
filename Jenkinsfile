@@ -14,17 +14,14 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 bat '''
-                    if not exist .venv (
-                        python -m venv .venv
-                    )
+                    :: Use absolute path to Python interpreter on Windows
+                    "C:\\Program Files\\Python311\\python.exe" -m venv .venv
 
                     .venv\\Scripts\\python.exe -m pip install --upgrade pip
-
                     .venv\\Scripts\\python.exe -m pip install -r requirements.txt
                 '''
             }
         }
-
         stage('Run Tests') {
             steps {
                 bat '''
