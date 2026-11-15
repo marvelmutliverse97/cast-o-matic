@@ -11,12 +11,6 @@ pipeline {
         }
 
         stage('Check Python') {
-<<<<<<< HEAD
-            steps {
-                bat '''
-                    echo Checking Python...
-                    "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" --version
-=======
             steps {
                 bat '''
                     "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" --version
@@ -29,45 +23,19 @@ pipeline {
                 bat '''
                     "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m venv .venv
 
+                    if errorlevel 1 exit /b 1
+
                     .venv\\Scripts\\python.exe -m pip install --upgrade pip
 
+                    if errorlevel 1 exit /b 1
+
                     .venv\\Scripts\\python.exe -m pip install -r requirements.txt
->>>>>>> 70dc5ca (Final polish for cast-o-matic project submission)
+
+                    if errorlevel 1 exit /b 1
                 '''
             }
         }
 
-<<<<<<< HEAD
-stage('Debug Python Logging') {
-    steps {
-        bat '''
-            "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -c "import logging; print('Logging file:', getattr(logging, '__file__', 'No file')); print('Has getLogger:', hasattr(logging, 'getLogger')); print('Module:', logging)"
-        '''
-    }
-}
-
-       
-stage('Install Dependencies') {
-    steps {
-        bat '''
-            "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m venv .venv
-
-            if errorlevel 1 exit /b 1
-
-            .venv\\Scripts\\python.exe -m pip install --upgrade pip
-
-            if errorlevel 1 exit /b 1
-
-            .venv\\Scripts\\python.exe -m pip install -r requirements.txt
-
-            if errorlevel 1 exit /b 1
-        '''
-    }
-}
-
-
-=======
->>>>>>> 70dc5ca (Final polish for cast-o-matic project submission)
         stage('Run Tests') {
             steps {
                 bat '''
@@ -92,7 +60,7 @@ stage('Install Dependencies') {
         }
 
         failure {
-            echo 'Pipeline failed. Check the console output.'
+            echo 'Pipeline failed. Check console output.'
         }
     }
 }
