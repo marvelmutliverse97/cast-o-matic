@@ -19,6 +19,14 @@ pipeline {
             }
         }
 
+stage('Debug Python Logging') {
+    steps {
+        bat '''
+            "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -c "import logging; print('Logging file:', getattr(logging, '__file__', 'No file')); print('Has getLogger:', hasattr(logging, 'getLogger')); print('Module:', logging)"
+        '''
+    }
+}
+
        
 stage('Install Dependencies') {
     steps {
