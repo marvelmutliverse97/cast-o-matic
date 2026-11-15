@@ -19,17 +19,25 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
-            steps {
-                bat '''
-                    "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m venv .venv
+       
+stage('Install Dependencies') {
+    steps {
+        bat '''
+            "C:\\Users\\Bindu Narayani\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m venv .venv
 
-                    .venv\\Scripts\\python.exe -m pip install --upgrade pip
+            if errorlevel 1 exit /b 1
 
-                    .venv\\Scripts\\python.exe -m pip install -r requirements.txt
-                '''
-            }
-        }
+            .venv\\Scripts\\python.exe -m pip install --upgrade pip
+
+            if errorlevel 1 exit /b 1
+
+            .venv\\Scripts\\python.exe -m pip install -r requirements.txt
+
+            if errorlevel 1 exit /b 1
+        '''
+    }
+}
+
 
         stage('Run Tests') {
             steps {
